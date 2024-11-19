@@ -6,16 +6,22 @@ class servos():
 
         # These constants depend on motor, assuming MX-28AR
         self.ADDR_TORQUE_ENABLE          = 64
+        self.ADDR_PROFILE_ACCELERATION   = 108
+        self.ADDR_PROFILE_VELOCITY       = 112
         self.ADDR_GOAL_POSITION          = 116
         self.ADDR_PRESENT_POSITION       = 132
         self.DXL_MINIMUM_POSITION_VALUE  = 0 
         self.DXL_MAXIMUM_POSITION_VALUE  = 4095 
         self.BAUDRATE                    = 57600
+        self.BYTE_LEN                    = 4
         
         self.DXL_MOVING_STATUS_THRESHOLD = 20
         self.TORQUE_ENABLE               = 1
         self.TORQUE_DISABLE              = 0 
         self.PROTOCOL_VERSION            = 2.0
+
+        # Profile velocity storage
+        self.prev_profile                = 0
 
         # IDs: Motor IDs must be sequential (1, 2, ..., n)
         if type(numMotors) is not int:
@@ -26,6 +32,10 @@ class servos():
         # Handlers
         self.portHandler = PortHandler(port)
         self.packetHandler = PacketHandler(self.PROTOCOL_VERSION)
+        self.groupBulkRead = GroupBulkRead(self.portHandler, 
+                                           self.packetHandler)
+        self.groupBulkWrite = GroupBulkWrite(self.portHandler, 
+                                             self.packetHandler)
 
         # Open port
         if not self.portHandler.openPort():
@@ -42,6 +52,9 @@ class servos():
             result, error = self.packetHandler.write1ByteTxRx(self.portHandler, i, self.ADDR_TORQUE_ENABLE, self.TORQUE_ENABLE)
             if not self.validateComm(result, error):
                 print(f"Failed to enable torque in motor {i}")
+
+        # Set initial profile
+        self._set_profile(self.prev_profile)
             
     def __del__(self):
         # Disable torque on each motor
@@ -93,4 +106,52 @@ class servos():
             # Check if position reached
             if abs(goal - present_pos) < self.DXL_MOVING_STATUS_THRESHOLD:
                 break 
+
+    def setAllPos(self, goals, dur = 0):
+        # verify and convert goal (degrees) to motor scale
+        for j in range(self.motor):
+            if goals[j] in range(0, 361):
+                goals[j] = int(goals[j] / 360 * self.DXL_MAXIMUM_POSITION_VALUE) + self.DXL_MINIMUM_POSITION_VALUE
+                print(goals[j])
+            else:
+                print(f"Invalid goal position: {goals[j]}")
+                return
+        
+        try:
+            if dur != self.prev_profile:
+                self._set_profile(dur)
+            for j in range(self.motor):
+                self.groupBulkWrite.addParam(
+                    j + 1,     # cycle through motor id
+                    self.ADDR_GOAL_POSITION, 
+                    self.BYTE_LEN, 
+                    self.param_goal_position(goals[j]))
+            self.groupBulkWrite.txPacket()
+            self.groupBulkWrite.clearParam()
+        except:
+            return False
+        return True
+    
+    #-------------------#
+    # Private Functions #
+    #-------------------#
+    def _set_profile(self, dur_ms):
+        # Change profile vel and acc of Dynamixels.
+        # Assumes that the motors are set to "Time-based Profile" (ADDR 10)
+        for i in range(1, self.motor+1):
+            self.packetHandler.write4ByteTxRx(self.portHandler, i, 
+                                        self.ADDR_PROFILE_VELOCITY, dur_ms)
+            self.packetHandler.write4ByteTxRx(self.portHandler, i, 
+                                        self.ADDR_PROFILE_ACCELERATION, 
+                                        int(dur_ms/3))
+        self.prev_profile = dur_ms
+        return
+    
+    def param_goal_position(self, goal_pos):
+        # Allocate goal position value into byte array
+        # Split a 32-bit number into 4 8-bit numbers for packet transmission
+        return [DXL_LOBYTE(DXL_LOWORD(goal_pos)), 
+                DXL_HIBYTE(DXL_LOWORD(goal_pos)),
+                DXL_LOBYTE(DXL_HIWORD(goal_pos)), 
+                DXL_HIBYTE(DXL_HIWORD(goal_pos))]
             
