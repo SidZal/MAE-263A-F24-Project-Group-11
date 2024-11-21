@@ -5,7 +5,7 @@ from time import sleep
 # first parameter: serial port to which usb is connected. depends on computer
 # second parameter: number of motors. Assumes sequential IDs (1, 2, ..., n)
 joint_num = 6
-u2d2 = servos('COM5', joint_num)
+u2d2 = servos('COM3', joint_num)
 
 # # only class function needed
 # u2d2.setPosition(1, 0)
