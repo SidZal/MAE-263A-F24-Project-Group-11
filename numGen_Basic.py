@@ -1,9 +1,11 @@
 from numGenerator import *
 import matplotlib.pyplot as plt
 import numpy as np
+from datetime import datetime
 import time
 
 def plot_2D_delay(array, delay = 0.05):
+    plt.close()
     plt.figure()
     # plt.xlim(-1, 2)
     # plt.ylim(-1, 2)

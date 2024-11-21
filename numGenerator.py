@@ -42,7 +42,7 @@ class NumGenerator:
         y_vals = np.linspace(start[1], end[1], num_points)
         return np.column_stack((x_vals, y_vals))
 
-    def generate_coord(self, number, points=10, scaling=1):
+    def generate_coord(self, number, points=10, scaling=1, deltaxy = [0, 0]):
         """Plot the number on a 7-segment display with interpolated points."""
         # Get the segments for the given number
         active_v = self.digit_segments.get(number, [])
@@ -55,6 +55,7 @@ class NumGenerator:
             
             # Get the interpolated points between start and end coordinates
             interpolated_points = self.interpolate_points(start, end, points)
+            interpolated_points += np.array(deltaxy)
             pos_array.append(interpolated_points)
         
         # Flatten and scale the coordinates
