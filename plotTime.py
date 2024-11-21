@@ -35,8 +35,11 @@ def plot_3D_delay(array, delay = 0.05):
 # Params
 numPoints = 10       # number of points interpolated on each segment
 scaling = 2          # scaling of the generated coordinates
-deltaxy = [-10, 10]  # shift generated coordinates with delta x y
-z = 10               # constant z value to append to xy coordinate
+deltaxy_m1 = [-10, 10]  # shift generated coordinates with delta x y
+deltaxy_m10 = [-10, 10]  # shift generated coordinates with delta x y
+deltaxy_h1 = [-10, 10]  # shift generated coordinates with delta x y
+deltaxy_h10 = [-10, 10]  # shift generated coordinates with delta x y
+z = -10               # constant z value to append to xy coordinate
 
 # Main code
 num_gen = NumGenerator()
