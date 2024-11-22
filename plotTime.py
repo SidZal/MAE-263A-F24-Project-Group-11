@@ -5,7 +5,8 @@ import numpy as np
 from datetime import datetime
 import time
 
-def plot_2D_delay(array, delay = 0.05):
+# Plot digit coordinates array with delay (emulates drawing)
+def plot_2D_delay(array, delay = 0.02):
     # plt.clf()
     plt.xlabel('X')
     plt.ylabel('Y')
@@ -13,64 +14,69 @@ def plot_2D_delay(array, delay = 0.05):
     plt.gca().set_aspect('equal')
     for coord in array:
         x, y = coord
-        plt.plot(x, y, 'bo')  # Plot each point as a blue circle ('bo')
-        plt.pause(delay)  # Pause for 0.5 seconds after plotting each point
-    # plt.draw()
+        plt.plot(x, y, 'bo')
+        plt.pause(delay)
+    plt.draw()
 
-def plot_3D_delay(array, delay = 0.05):
-    plt.clf()
-    ax = plt.axes(projection='3d')  # Create 3D axis
-    ax.set_xlabel('X')
-    ax.set_ylabel('Y')
-    ax.set_zlabel('Z')
-    ax.set_title('3D Digit')
-    ax.set_box_aspect([1, 1, 1])  # Set aspect ratio to be equal for all axes   
-    # Plot each point in 3D
-    for coord in array:
-        x, y, z = coord
-        ax.scatter(x, y, z, color='b')  # Plot each point as a blue dot in 3D
-        plt.pause(delay)  # Pause for the specified delay after plotting each point
+# Plot digit digit coordinates array without delay (emulates no change)
+def plot_2D(array):
+    plt.xlabel('X')
+    plt.ylabel('Y')
+    plt.title('2D Digit')
+    plt.gca().set_aspect('equal')
+    x = array[:, 0]
+    y = array[:, 1]
+    plt.scatter(x, y, color='blue', marker='o')
     plt.draw()
 
 # Params
 numPoints = 10          # number of points interpolated on each segment
-scaling = 6             # scaling of the generated coordinates
-deltaxy_m1 = [-1, 10]   # shift generated coordinates with delta x y
-deltaxy_m10 = [-2, 10]  # shift generated coordinates with delta x y
-deltaxy_h1 = [-3, 10]   # shift generated coordinates with delta x y
-deltaxy_h10 = [-4, 10]  # shift generated coordinates with delta x y
+scaling = 5             # scaling of the coordinates
+deltaxy_m1  = [40, 0]   # shift coordinates of minute ones
+deltaxy_m10 = [30, 0]   # shift coordinates of minute tens
+deltaxy_h1  = [20, 0]   # shift coordinates of hour ones
+deltaxy_h10 = [10, 0]   # shift coordinates of hour zeros
+delta_array = [deltaxy_h10, deltaxy_h1, deltaxy_m10, deltaxy_m1]
 z = -10                 # constant z value to append to xy coordinate
 
 # Main code
+# Initialize number generator class
 num_gen = NumGenerator()
+
+# Start datetime logging
 prev_time = datetime.now()
-prev_hour = prev_time.hour
-prev_min = prev_time.minute - 1
+prev_h10, prev_h1 = divmod(prev_time.hour, 10)
+prev_m10, prev_m1 = divmod(prev_time.minute, 10)
+prev_array = np.array([prev_h10, prev_h1, prev_m10, prev_m1])
+prev_array -= 1
 
-plt.ion()  # Turn on interactive mode20
-
+# Turn on plot interactive mode
+plt.ion()  
 plt.figure()
 
+# Loop to update time
 while 1:
+    # obtain current time and parse to single digits
     curr_time = datetime.now()
-    curr_hour = curr_time.hour
-    curr_min = curr_time.minute
+    h10, h1 = divmod(curr_time.hour, 10)
+    m10, m1 = divmod(curr_time.minute, 10)
+    curr_array = np.array([h10, h1, m10, m1])
 
-    if curr_min != prev_min:
-        m10, m1 = divmod(curr_min, 10)
-        print(f"Hour: {curr_hour}, minute: {curr_min}")
-        
-        coords_m1 = num_gen.generate_coord(m1, numPoints, scaling, deltaxy_m1)
-        coords_m10 = num_gen.generate_coord(m10, numPoints, scaling, deltaxy_m10)
-        # coords_rounded = np.round(coords, 1)
-        # coords_M1_3D = np.column_stack((coords_m1, np.full(coords_m1.shape[0], z)))
-        # print(coords_3D)
+    if not np.array_equal(prev_array, curr_array):
+        print(f"Hour: {curr_array[0]}{curr_array[1]}, minute: {curr_array[2]}{curr_array[3]}")
         plt.clf()
-        plot_2D_delay(coords_m1)
-        plot_2D_delay(coords_m10)
-        plt.draw()
-        # plot_3D_delay(coords_3D)
-
-        prev_min = curr_min
+        for i in range(len(curr_array)):
+            coords = num_gen.generate_coord(curr_array[i], numPoints, scaling, delta_array[i])
+            coords_3D = np.column_stack((curr_array[i], np.full(curr_array[i].shape[0], z)))
+            if curr_array[i] != prev_array[i]:
+                plot_2D_delay(coords)
+                # Erase this digit (custom movement)
+                # Calculate IK for this digit
+                # Command robot to draw this digit
+            else:
+                plot_2D(coords)
+                # No change. Keep this digit
+        prev_array = curr_array
 
     time.sleep(1)
+
