@@ -6,7 +6,7 @@ from datetime import datetime
 import time
 
 def plot_2D_delay(array, delay = 0.05):
-    plt.clf()
+    # plt.clf()
     plt.xlabel('X')
     plt.ylabel('Y')
     plt.title('2D Digit')
@@ -15,7 +15,7 @@ def plot_2D_delay(array, delay = 0.05):
         x, y = coord
         plt.plot(x, y, 'bo')  # Plot each point as a blue circle ('bo')
         plt.pause(delay)  # Pause for 0.5 seconds after plotting each point
-    plt.draw()
+    # plt.draw()
 
 def plot_3D_delay(array, delay = 0.05):
     plt.clf()
@@ -33,10 +33,13 @@ def plot_3D_delay(array, delay = 0.05):
     plt.draw()
 
 # Params
-numPoints = 10       # number of points interpolated on each segment
-scaling = 2          # scaling of the generated coordinates
-deltaxy = [-10, 10]  # shift generated coordinates with delta x y
-z = 10               # constant z value to append to xy coordinate
+numPoints = 10          # number of points interpolated on each segment
+scaling = 6             # scaling of the generated coordinates
+deltaxy_m1 = [-1, 10]   # shift generated coordinates with delta x y
+deltaxy_m10 = [-2, 10]  # shift generated coordinates with delta x y
+deltaxy_h1 = [-3, 10]   # shift generated coordinates with delta x y
+deltaxy_h10 = [-4, 10]  # shift generated coordinates with delta x y
+z = -10                 # constant z value to append to xy coordinate
 
 # Main code
 num_gen = NumGenerator()
@@ -44,7 +47,8 @@ prev_time = datetime.now()
 prev_hour = prev_time.hour
 prev_min = prev_time.minute - 1
 
-plt.ion()  # Turn on interactive mode
+plt.ion()  # Turn on interactive mode20
+
 plt.figure()
 
 while 1:
@@ -53,14 +57,18 @@ while 1:
     curr_min = curr_time.minute
 
     if curr_min != prev_min:
-        tens, ones = divmod(curr_min, 10)
-        print(f"Hour: {curr_hour}, minute: {curr_min}, breakdown: {tens}, {ones}")
+        m10, m1 = divmod(curr_min, 10)
+        print(f"Hour: {curr_hour}, minute: {curr_min}")
         
-        coords = num_gen.generate_coord(ones, numPoints, scaling, deltaxy)
+        coords_m1 = num_gen.generate_coord(m1, numPoints, scaling, deltaxy_m1)
+        coords_m10 = num_gen.generate_coord(m10, numPoints, scaling, deltaxy_m10)
         # coords_rounded = np.round(coords, 1)
-        coords_3D = np.column_stack((coords, np.full(coords.shape[0], z)))
+        # coords_M1_3D = np.column_stack((coords_m1, np.full(coords_m1.shape[0], z)))
         # print(coords_3D)
-        plot_2D_delay(coords)
+        plt.clf()
+        plot_2D_delay(coords_m1)
+        plot_2D_delay(coords_m10)
+        plt.draw()
         # plot_3D_delay(coords_3D)
 
         prev_min = curr_min
