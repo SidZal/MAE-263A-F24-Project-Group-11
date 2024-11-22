@@ -25,7 +25,7 @@ class NumGenerator:
         # The pattern for the 7-segment display digits
         self.digit_segments = {
             0: ['A', 'B', 'D', 'F', 'E', 'C', 'A'],     # 0 uses segments A, B, C, D, E, F
-            1: ['A', 'C', 'E'],                        # 1 uses segments B, C
+            1: ['B', 'D', 'F'],                        # 1 uses segments B, C
             2: ['A', 'B', 'D', 'C', 'E', 'F'],          # 2 uses segments A, B, D, C, E, F
             3: ['A', 'B', 'D', 'C', 'D', 'F', 'E'],     # 3 uses segments A, B, D, C, D, F
             4: ['A', 'C', 'D', 'B', 'D', 'F'],          # 4 uses segments A, B, C, D, E, F
@@ -55,11 +55,12 @@ class NumGenerator:
             
             # Get the interpolated points between start and end coordinates
             interpolated_points = self.interpolate_points(start, end, points)
-            interpolated_points += np.array(deltaxy)
+            interpolated_points = interpolated_points * scaling + np.array(deltaxy)
             pos_array.append(interpolated_points)
         
         # Flatten and scale the coordinates
-        pos_array = np.array(pos_array).reshape(-1, 2) * scaling
+        pos_array = np.array(pos_array).reshape(-1, 2)
+        
         return pos_array
     
     def display_plot(self, number, points=10, scaling=1):
