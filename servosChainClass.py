@@ -1,4 +1,5 @@
 from dynamixel_sdk import *
+import numpy as np
 
 # Class suited for this project's needs, based on Dynamixel SDK example files
 class servos():
@@ -75,7 +76,7 @@ class servos():
             return True
         return False
 
-    def setPosition(self, id, goal):    
+    def setPos(self, id, goal):    
         # Verify motor ID
         if id not in range(1, self.motor+1):
             print(f"Invalid ID: {id}")
@@ -105,14 +106,15 @@ class servos():
             
             # Check if position reached
             if abs(goal - present_pos) < self.DXL_MOVING_STATUS_THRESHOLD:
-                break 
+                break
+
 
     def setAllPos(self, goals, dur = 0):
         # verify and convert goal (degrees) to motor scale
         for j in range(self.motor):
             if goals[j] in range(0, 361):
                 goals[j] = int(goals[j] / 360 * self.DXL_MAXIMUM_POSITION_VALUE) + self.DXL_MINIMUM_POSITION_VALUE
-                print(goals[j])
+                # print(goals[j])
             else:
                 print(f"Invalid goal position: {goals[j]}")
                 return
@@ -130,7 +132,36 @@ class servos():
             self.groupBulkWrite.clearParam()
         except:
             return False
+        
+        self.waitToReachGoal( [ids+1 for ids in range(self.motor)], goals)
         return True
+    
+    def waitToReachGoal(self, ids, goals):
+        if len(ids) is not len(goals):
+            print("Invalid input")
+            return
+
+        while True:
+            present_pos = [None for x in range(len(ids))]
+
+            for id in range(len(ids)):
+                # Read current position
+                present_pos[id], result, error = self.packetHandler.read4ByteTxRx(self.portHandler, ids[id], self.ADDR_PRESENT_POSITION)
+                if not self.validateComm(result, error):
+                    print(f"Failed to read position on motor {ids[id]}")
+                    return
+                
+            # Check if position reached
+            if not sum(np.abs(np.subtract(goals, present_pos)) >= self.DXL_MOVING_STATUS_THRESHOLD):
+                break
+
+    def readPos(self, id):
+        present_pos, result, error = self.packetHandler.read4ByteTxRx(self.portHandler, id, self.ADDR_PRESENT_POSITION)
+        if not self.validateComm(result, error):
+            print(f"Failed to read position on motor {id}")
+            return
+        
+        return present_pos
     
     #-------------------#
     # Private Functions #
