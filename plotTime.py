@@ -67,7 +67,7 @@ while 1:
         plt.clf()
         for i in range(len(curr_array)):
             coords = num_gen.generate_coord(curr_array[i], numPoints, scaling, delta_array[i])
-            coords_3D = np.column_stack((curr_array[i], np.full(curr_array[i].shape[0], z)))
+            coords_3D = np.column_stack((coords, np.full(coords.shape[0], z)))
             if curr_array[i] != prev_array[i]:
                 plot_2D_delay(coords)
                 # Erase this digit (custom movement)
