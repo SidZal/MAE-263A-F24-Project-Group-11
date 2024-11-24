@@ -1,30 +1,33 @@
-from servosChainClass import servos
+from numGenerator import NumGenerator
+from kinematicsClass import prrrKinematics
 from time import sleep
 
-# This class interacts with the U2D2 to control the motors
-# first parameter: serial port to which usb is connected. depends on computer
-# second parameter: number of motors. Assumes sequential IDs (1, 2, ..., n)
-joint_num = 2
-u2d2 = servos('COM3', joint_num)
+print("Please ensure starting position requirements are met, motors won't calibrate themselves")
+# Robot does not calibrate itself, assumed starting position:
+# Motor 1 (prismatic joint): carriage should be down such that eraser/pen is touching workspace
+# Motor 2 AND 3's joints should be configured such that the next link sticking out perpendicular from the frame
+# Motor 4 be rotated such that the eraser is down
 
-# # only class function needed
-# u2d2.setPosition(1, 0)
-# sleep(1)
+print("Initializing Number Generator")
+pointsGen = NumGenerator()
 
-# u2d2.setPosition(1 180)
-# sleep(1)
+# measurements in CM
+print("Initializing Kinematics Calculator and Motor Controller")
+arm = prrrKinematics('COM3', 8, 8, 4.4, .17, debugging=True)
 
-# u2d2.setPosition(1, 90)
-# sleep(1)
+print("Generating Coordinate Array")
+coords = pointsGen.generate_coord(0, deltaxy=[14,-2])
 
-# u2d2.setPosition(1, 360)
-# sleep(1)
+print("Lifting Arm to Flip to Pen")
+arm.flipTool(1)
 
-u2d2.setPos(1, 360)
+for dot in coords:
+    arm.moveArm(dot)
 
-# if duration is given, the joint will move in a trapezoidal profile.
-# duration breakdown: 1/3 acceleration, 1/3 max vel, 1/3 deceleration.
-u2d2.setAllPos([0 for i in range(joint_num)], 1000)
-u2d2.setAllPos([270, 360], 1000)
-u2d2.setAllPos([360, 180], 1000)
-u2d2.setAllPos([0 for i in range(joint_num)], 1000)
+print("Lifting Arm to Flip to Eraser")
+arm.flipTool(0, 5)
+
+print("Erasing")
+for dot in coords:
+    arm.moveArm(dot)
+
