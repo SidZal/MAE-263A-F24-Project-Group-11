@@ -13,10 +13,10 @@ pointsGen = NumGenerator()
 
 # measurements in CM
 print("Initializing Kinematics Calculator and Motor Controller")
-arm = prrrKinematics('COM3', 8, 8, 4.4, .17, debugging=True)
+arm = prrrKinematics('COM19', 10, 10, 4.4, .17, liftDistMultiplierToFlip=5, debugging=True)
 
 print("Generating Coordinate Array")
-coords = pointsGen.generate_coord(0, deltaxy=[14,-2])
+coords = pointsGen.generate_coord(5, scaling=3, deltaxy=[14,-2])
 
 print("Lifting Arm to Flip to Pen")
 arm.flipTool(1)

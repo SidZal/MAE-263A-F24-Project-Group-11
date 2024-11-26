@@ -36,10 +36,13 @@ class prrrKinematics():
         self.motorAngles[2] = th3 - self.thEnd - 180
 
         if self.debugging:
-            print(f"X: {x} Y: {y} Theta2: {th2} Theta3: {th3} Motor2: {self.motorAngles[1]} Motor3: {self.motorAngles[2]}")
+            print(f"X: {x} Y: {y} Theta2: {th2} Theta3: {th3} Motor1: {self.motorAngles[0]} Motor2: {self.motorAngles[1]} Motor3: {self.motorAngles[2]} Motor4: {self.motorAngles[3]}")
 
         # move motors
-        assert self.motorController.setAllPos(self.motorAngles, 1000)
+        #for i in range(4):
+            #print(self.motorController.readPos(i+1))
+        assert self.motorController.setAllPos(self.motorAngles, 0)
+        print(self.motorAngles[3])
     
     # Select tool: 0 eraser, 1 pen
     def flipTool(self, tool, wait = 0):
@@ -48,15 +51,16 @@ class prrrKinematics():
         self.lift(self.flipLift)
         sleep(wait)
 
-        assert self.motorController.setPos(4, tool * 180)
-        self.motorAngles[3] = tool * 180
+        tool_deg = tool * 180
+        self.motorController.setPos(4, tool_deg)
+        self.motorAngles[3] = tool_deg
 
         self.lift(0)
     
     # Use lift. give dist in units consistent with given parameters
     def lift(self, dist):
         angle = dist / self.pitch * 360
-        assert self.motorController.setPos(1, angle)
+        self.motorController.setPos(1, angle)
         self.motorAngles[0] = angle
     
     # IK equations. These equations' configuration was chosen arbitrarily over the other

@@ -106,7 +106,7 @@ class servos():
         new_present_pos = int(np.ceil(setDegrees / 360 * self.DXL_MAXIMUM_POSITION_VALUE)) + self.DXL_MINIMUM_POSITION_VALUE
 
         # new present position
-        homing_offset = new_present_pos - old_present_pos
+        homing_offset = old_present_pos - new_present_pos
 
         result, error = self.packetHandler.write4ByteTxRx(self.portHandler, id, self.ADDR_HOMING_OFFSET, homing_offset)
         assert self.validateComm(result, error)
@@ -138,8 +138,10 @@ class servos():
     # Set all positions with goals array
     def setAllPos(self, goals, dur = 0):
         # verify and convert goal (degrees) to motor scale
+        new_goals = [0 for i in range(len(goals))]
         for j in range(self.motor):
-            goals[j] = int(goals[j] / 360 * self.DXL_MAXIMUM_POSITION_VALUE) + self.DXL_MINIMUM_POSITION_VALUE
+            new_goals[j] = int(goals[j] / 360 * self.DXL_MAXIMUM_POSITION_VALUE) + self.DXL_MINIMUM_POSITION_VALUE
+        print(new_goals)
         
         try:
             if dur != self.prev_profile:
@@ -149,13 +151,14 @@ class servos():
                     j + 1,     # cycle through motor id
                     self.ADDR_GOAL_POSITION, 
                     self.BYTE_LEN, 
-                    self.param_goal_position(goals[j]))
+                    self.param_goal_position(new_goals[j]))
             self.groupBulkWrite.txPacket()
             self.groupBulkWrite.clearParam()
         except:
             return False
         
-        self.waitToReachGoal( [ids+1 for ids in range(self.motor)], goals)
+        self.waitToReachGoal( [ids+1 for ids in range(self.motor)], new_goals)
+        print(new_goals)
         return True
     
     # Concurrently wait for ALL given motors to reach goals
