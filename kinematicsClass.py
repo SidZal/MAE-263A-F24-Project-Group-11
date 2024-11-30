@@ -5,7 +5,7 @@ from time import sleep
 
 # IK Kinematics class for prismatic-revolute-revolute-revolute joint robot
 class prrrKinematics():
-    def __init__(self, port, linkTwo, linkThreeMain, endEffectorDist, pitch, liftDistMultiplierToFlip = 10, debugging = False):
+    def __init__(self, port, linkTwo, linkThreeMain, endEffectorDist, pitch, liftHeightScale = 1, debugging = False):
         # Link Parameters
         self.linkTwo = linkTwo
         
@@ -15,16 +15,28 @@ class prrrKinematics():
 
         # Set pitch and how far up to go to flip eraser/pen
         self.pitch = pitch
-        self.flipLift = liftDistMultiplierToFlip * self.pitch
+        self.liftHeight = liftHeightScale * self.pitch
 
         # Set initial motor angles and initialize motor controller
         self.motorAngles = [0, 180, 180, 0]
         self.motorController = servos(port, 4, self.motorAngles)
 
+        # Should we print debugging messages
         self.debugging = debugging
-        if self.debugging:
-            for i in range(4):
-                print(self.motorController.readPos(i+1))
+
+    # high level function that combines class functionality
+    def applyAndFollow(self, pos_array, tool):
+        self.flipTool(tool)
+
+        # Move to first point before pressing tool down
+        self.moveArm(pos_array[1])
+
+        self.lift(0)
+
+        for pos in pos_array[1:]:
+            self.moveArm(pos)
+
+        self.lift(self.liftHeight)
 
     def moveArm(self, coordinate):
         x = coordinate[0]
@@ -32,30 +44,22 @@ class prrrKinematics():
         th2, th3 = self.inverseKinematicsPRR(x, y)
 
         # Convert IK angles to motor angles
-        self.motorAngles[1] = th2 + 180
-        self.motorAngles[2] = th3 - self.thEnd - 180
+        self.motorAngles[1] = th2 + 270
+        self.motorAngles[2] = th3 - self.thEnd + 180
 
         if self.debugging:
             print(f"X: {x} Y: {y} Theta2: {th2} Theta3: {th3} Motor1: {self.motorAngles[0]} Motor2: {self.motorAngles[1]} Motor3: {self.motorAngles[2]} Motor4: {self.motorAngles[3]}")
 
         # move motors
-        #for i in range(4):
-            #print(self.motorController.readPos(i+1))
-        assert self.motorController.setAllPos(self.motorAngles, 0)
-        print(self.motorAngles[3])
+        assert self.motorController.setAllPos(self.motorAngles, 1000)
     
     # Select tool: 0 eraser, 1 pen
     def flipTool(self, tool, wait = 0):
         assert tool in [0, 1]
 
-        self.lift(self.flipLift)
-        sleep(wait)
-
         tool_deg = tool * 180
         self.motorController.setPos(4, tool_deg)
         self.motorAngles[3] = tool_deg
-
-        self.lift(0)
     
     # Use lift. give dist in units consistent with given parameters
     def lift(self, dist):
@@ -63,17 +67,24 @@ class prrrKinematics():
         self.motorController.setPos(1, angle)
         self.motorAngles[0] = angle
     
-    # IK equations. These equations' configuration was chosen arbitrarily over the other
+    # IK equations for elbow-out configuration
     def inverseKinematicsPRR(self, x, y):
-        # Planar motion (x, y): Solve for theta2 and theta3 using geometry
-        r = np.sqrt(x**2 + y**2) # Radial distance in the x-y plane
+        r = np.sqrt(x**2 + y**2)
+
+        # Ensure reachable point
         assert r < self.linkTwo + self.linkThree
 
-        # Using the law of cosines to calculate theta2 and theta3
-        cos_theta3 = (self.linkTwo**2 + self.linkThree**2 - r**2) / (2 * self.linkTwo * self.linkThree)
-        theta3 = np.pi + np.arccos(cos_theta3)
+        goal_pos_angle = np.arctan2(y,x)
 
-        theta2 = np.arctan2(y, x) + np.arccos((self.linkTwo**2 + r**2 - self.linkThree**2) / (2 * self.linkTwo * r))
+        # Origin point's angle in triangle of interest
+        origin_angle = np.arccos( (r**2 + self.linkTwo**2 - self.linkThree**2) / (2*r*self.linkTwo) )
+
+        # Elbow point's angle in triangl of interest
+        elbow_angle = np.arccos( (self.linkTwo**2 + self.linkThree**2 - r**2) / (2*self.linkTwo*self.linkThree))
+
+        theta2 = goal_pos_angle - origin_angle
+        theta3 = np.pi - elbow_angle
+
 
         return theta2/np.pi*180, theta3/np.pi*180
             

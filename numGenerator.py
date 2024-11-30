@@ -63,14 +63,27 @@ class NumGenerator:
         
         return pos_array
     
-    def display_plot(self, number, points=10, scaling=1):
-        """Display the plot of the number on a 7-segment display."""
-        pos_array = self.plot_number(number, points, scaling)
+    def generate_eraser_coord(self, start, scaling=1, columns = 5):
+        """Generate coords for erasing all contents of a given unit at start"""
+        pos_array = []
+
+        for i in range(columns):
+            x_col = start[0] + scaling * i/columns
+
+            pos_array.append([x_col, start[1]])
+            pos_array.append([x_col, start[1] + 2*scaling])
+
+        # Flatten and scale the coordinates
+        pos_array = np.array(pos_array).reshape(-1, 2)
+
+        return pos_array
+
+    def display_plot(self, pos_array):
+        """Display the plot of given points."""
         
         # Plot the number
         plt.figure(figsize=(5, 8))
         plt.plot(pos_array[:, 0], pos_array[:, 1], 'bo-', markersize=8)
         plt.gca().set_aspect('equal', adjustable='box')
         plt.axis('off')
-        plt.title(f'7-Segment Display for {number}')
         plt.show()
