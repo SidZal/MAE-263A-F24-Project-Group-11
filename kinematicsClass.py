@@ -5,13 +5,13 @@ from time import sleep
 
 # IK Kinematics class for prismatic-revolute-revolute-revolute joint robot
 class prrrKinematics():
-    def __init__(self, port, linkTwo, linkThreeMain, endEffectorDist, pitch, liftHeightScale = 1, debugging = False):
+    def __init__(self, port, linkTwo, linkThreeMain, endEffectorDist, pitch, liftHeightScale = 5, debugging = False):
         # Link Parameters
         self.linkTwo = linkTwo
         
         # distance between motor 3 and 4 axis makes triangle with end effector dist to make linkthree length
         self.linkThree = np.sqrt(linkThreeMain**2 + endEffectorDist**2) 
-        self.thEnd = np.arctan2(endEffectorDist, linkThreeMain)
+        self.thEnd = np.arctan2(endEffectorDist, linkThreeMain) * 180 / np.pi
 
         # Set pitch and how far up to go to flip eraser/pen
         self.pitch = pitch
@@ -25,7 +25,8 @@ class prrrKinematics():
         self.debugging = debugging
 
     # high level function that combines class functionality
-    def applyAndFollow(self, pos_array, tool):
+    def applyAndFollow(self, pos_array, tool, short_dur = 300):
+        self.lift(self.liftHeight)
         self.flipTool(tool)
 
         # Move to first point before pressing tool down
@@ -34,11 +35,11 @@ class prrrKinematics():
         self.lift(0)
 
         for pos in pos_array[1:]:
-            self.moveArm(pos)
+            self.moveArm(pos, short_dur)
 
         self.lift(self.liftHeight)
 
-    def moveArm(self, coordinate):
+    def moveArm(self, coordinate, duration = 800):
         x = coordinate[0]
         y = coordinate[1]
         th2, th3 = self.inverseKinematicsPRR(x, y)
@@ -51,7 +52,7 @@ class prrrKinematics():
             print(f"X: {x} Y: {y} Theta2: {th2} Theta3: {th3} Motor1: {self.motorAngles[0]} Motor2: {self.motorAngles[1]} Motor3: {self.motorAngles[2]} Motor4: {self.motorAngles[3]}")
 
         # move motors
-        assert self.motorController.setAllPos(self.motorAngles, 1000)
+        assert self.motorController.setAllPos(self.motorAngles, duration)
     
     # Select tool: 0 eraser, 1 pen
     def flipTool(self, tool, wait = 0):
@@ -65,6 +66,7 @@ class prrrKinematics():
     def lift(self, dist):
         angle = dist / self.pitch * 360
         self.motorController.setPos(1, angle)
+        print(f"Setting lift to {angle}")
         self.motorAngles[0] = angle
     
     # IK equations for elbow-out configuration

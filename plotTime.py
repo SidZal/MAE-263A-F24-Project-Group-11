@@ -23,25 +23,27 @@ upper_arm_length = 10
 forearm_length = 10
 wrist_length = 4.4
 height_to_lift = 1
-rest_pos = [wrist_length, -(upper_arm_length + forearm_length)]
+rest_pos = [-upper_arm_length + wrist_length, -forearm_length]
 
 # Clock Position / Scale
-numPoints = 10          # number of points interpolated on each segment
-scaling = 3             # scaling of the coordinates
-x = 1                   # starting x
-y = -8                  # starting y
+numPoints = 5        # number of points interpolated on each segment
+scaling = 2.8       # scaling of the coordinates
+x = -5               # starting x
+y = -11              # starting y
 spacing = 1
 
 delta_array = [
     [x + (spacing + scaling)*pos , y] for pos in range(4)
 ]
 
+print(f"Offsets: {delta_array}")
+
 # Main code
 print("Initializing Number Generator")
 num_gen = NumGenerator()
 
 print("Initializing Kinematics Calculator and Motor Controller")
-arm = prrrKinematics(port, upper_arm_length, forearm_length, wrist_length, rod_pitch, debugging = True)
+arm = prrrKinematics(port, upper_arm_length, forearm_length, wrist_length, rod_pitch, liftHeightScale=4, debugging = True)
 arm.lift(height_to_lift)
 
 # Start datetime logging
@@ -73,8 +75,8 @@ while 1:
                 # Erase previous digit
                 if prev_array[i] is not None:
                     print(f"Erasing digit {i+1}")
-                    erase_path = num_gen.generate_eraser_coord(delta_array[i], scaling)
-                    arm.applyAndFollow(erase_path, 0)
+                    erase_path = num_gen.generate_eraser_coord(delta_array[i], scaling=scaling)
+                    arm.applyAndFollow(erase_path, 0, short_dur=600)
 
                 # Draw digit
                 print(f"Drawing {curr_array[i]} at digit {i+1}")

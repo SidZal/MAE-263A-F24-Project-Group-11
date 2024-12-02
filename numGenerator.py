@@ -63,15 +63,15 @@ class NumGenerator:
         
         return pos_array
     
-    def generate_eraser_coord(self, start, scaling=1, columns = 5):
+    def generate_eraser_coord(self, start, scaling=1, columns = 5, spacing = 0.2):
         """Generate coords for erasing all contents of a given unit at start"""
         pos_array = []
 
-        for i in range(columns):
-            x_col = start[0] + scaling * i/columns
+        range_x = np.linspace(start[0] - spacing, start[0] + scaling + spacing, columns)
 
-            pos_array.append([x_col, start[1]])
-            pos_array.append([x_col, start[1] + 2*scaling])
+        for x in range_x:
+            pos_array.append([x, start[1] - 0.5 * spacing])
+            pos_array.append([x, start[1] + 2*scaling + 0.5*spacing])
 
         # Flatten and scale the coordinates
         pos_array = np.array(pos_array).reshape(-1, 2)
