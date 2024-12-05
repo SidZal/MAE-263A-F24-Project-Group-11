@@ -27,10 +27,10 @@ rest_pos = [-upper_arm_length + wrist_length, -forearm_length]
 
 # Clock Position / Scale
 numPoints = 5        # number of points interpolated on each segment
-scaling = 2.8       # scaling of the coordinates
-x = -5               # starting x
+scaling = 2.7       # scaling of the coordinates
+x = -6               # starting x
 y = -11              # starting y
-spacing = 1
+spacing = 1.4
 
 delta_array = [
     [x + (spacing + scaling)*pos , y] for pos in range(4)
@@ -75,12 +75,12 @@ while 1:
                 # Erase previous digit
                 if prev_array[i] is not None:
                     print(f"Erasing digit {i+1}")
-                    erase_path = num_gen.generate_eraser_coord(delta_array[i], scaling=scaling)
-                    arm.applyAndFollow(erase_path, 0, short_dur=600)
+                    erase_path = num_gen.generate_eraser_coord(delta_array[i], scaling=scaling, columns =10, spacing = spacing/2.5)
+                    arm.applyAndFollow(erase_path, 0, short_dur=200)
 
                 # Draw digit
                 print(f"Drawing {curr_array[i]} at digit {i+1}")
-                arm.applyAndFollow(coords, 1)
+                arm.applyAndFollow(coords, 1, short_dur = 100)
     
             else:
                 # No change. Keep this digit
